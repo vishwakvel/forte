@@ -1,103 +1,140 @@
-"""UMAP embedding + KMeans clustering."""
-import numpy as np
-from sklearn.cluster import KMeans
+"""Genre × library-depth topographic surface (timeline filtered externally)."""
+from __future__ import annotations
 
-FEATURE_KEYS = [
-    "energy", "valence", "danceability", "tempo",
-    "acousticness", "instrumentalness", "liveness",
-    "speechiness", "loudness",
-]
+from collections import defaultdict
 
-TRAIT_LABELS = {
-    "energy": "energetic",
-    "valence": "upbeat",
-    "danceability": "danceable",
-    "acousticness": "acoustic",
-    "instrumentalness": "instrumental",
-    "speechiness": "lyrical",
-}
+from app.services.genres import axis_x, family, map_family, map_layout_genres, primary_family
 
 
-def _feature_matrix(ratings: list[dict]) -> tuple[np.ndarray, list[dict]] | None:
-    xs, meta = [], []
-    for r in ratings:
-        feats = (r.get("songs") or {}).get("audio_features")
-        song = r.get("songs") or {}
-        if not feats:
-            continue
-        xs.append([feats.get(k, 0) for k in FEATURE_KEYS])
-        meta.append({
-            "song_id": r["song_id"],
-            "title": song.get("title"),
-            "artist": song.get("artist"),
-            "elo": r["elo"],
-            "bucket": r["bucket"],
-            "created_at": r["created_at"],
-        })
-    if len(xs) < 20:
-        return None
-    return np.array(xs), meta
+def _depth(yi: int, n: int) -> float:
+    if n <= 1:
+        return 0.0
+    return round((yi / (n - 1)) * 2 - 1, 4)
 
 
-def _pick_k(X: np.ndarray) -> int:
-    # ponytail: elbow via inertia drop; cap k at 5
-    best_k, best_drop = 3, 0.0
-    inertias = []
-    for k in range(2, 6):
-        km = KMeans(n_clusters=k, random_state=42, n_init=10)
-        km.fit(X)
-        inertias.append(km.inertia_)
-    for i in range(1, len(inertias)):
-        drop = inertias[i - 1] - inertias[i]
-        if drop > best_drop:
-            best_drop = drop
-            best_k = i + 2
-    return min(best_k, 5)
+def _exposure_label(zi: int, n_z: int) -> str:
+    t = zi / max(n_z - 1, 1)
+    if t < 0.25:
+        return "early"
+    if t < 0.55:
+        return "growing"
+    if t < 0.8:
+        return "deep"
+    return "core"
 
 
-def compute_embedding(ratings: list[dict], before: str | None = None) -> dict | None:
-    filtered = ratings
+def compute_embedding(
+    ratings: list[dict],
+    before: str | None = None,
+    top_artists: list[dict] | None = None,
+) -> dict | None:
+    filtered = sorted(ratings, key=lambda r: r["created_at"])
     if before:
-        filtered = [r for r in ratings if r["created_at"] <= before]
-    data = _feature_matrix(filtered)
-    if data is None:
+        filtered = [r for r in filtered if r["created_at"] <= before]
+    if len(filtered) < 10:
         return None
-    X, meta = data
 
-    try:
-        import umap
-        reducer = umap.UMAP(n_components=2, random_state=42, n_neighbors=min(15, len(X) - 1))
-        coords = reducer.fit_transform(X)
-    except Exception:
-        from sklearn.decomposition import PCA
-        coords = PCA(n_components=2, random_state=42).fit_transform(X)
+    artist_genre_map: dict[str, list[str]] = {}
+    if top_artists:
+        from app.services.artists import song_artists
+        artist_genre_map = {
+            (a.get("name") or "").lower(): [g.lower() for g in (a.get("genres") or [])]
+            for a in (top_artists or [])
+        }
 
-    k = _pick_k(X)
-    labels = KMeans(n_clusters=k, random_state=42, n_init=10).fit_predict(X)
+    def _fam_for_rating(r: dict) -> str:
+        song = r.get("songs") or {}
+        fam = map_family(primary_family(song))
+        if fam == "other" and artist_genre_map:
+            from app.services.artists import song_artists
+            for artist in song_artists(song):
+                for g in artist_genre_map.get(artist.lower(), [])[:2]:
+                    return map_family(family(g))
+        return fam
 
-    cluster_traits = {}
-    for c in range(k):
-        mask = labels == c
-        centroid = X[mask].mean(axis=0)
-        top_idx = np.argsort(centroid)[-2:][::-1]
-        traits = [TRAIT_LABELS.get(FEATURE_KEYS[i], FEATURE_KEYS[i]) for i in top_idx]
-        cluster_traits[str(c)] = traits
+    ordered = map_layout_genres()
+    n_z = 5
+    by_genre: dict[str, list[dict]] = defaultdict(list)
+    for r in filtered:
+        by_genre[_fam_for_rating(r)].append(r)
 
-    points = []
-    for i, m in enumerate(meta):
-        points.append({
-            **m,
-            "x": float(coords[i, 0]),
-            "y": float(coords[i, 1]),
-            "cluster": int(labels[i]),
-            "cluster_label": ", ".join(cluster_traits.get(str(labels[i]), [])),
-        })
+    cells: dict[tuple[str, int], list[dict]] = defaultdict(list)
+    for fam, songs in by_genre.items():
+        songs_sorted = sorted(songs, key=lambda r: r["created_at"])
+        n = len(songs_sorted)
+        for idx, r in enumerate(songs_sorted):
+            zi = min(n_z - 1, int(idx / max(n - 1, 1) * (n_z - 1)))
+            cells[(fam, zi)].append(r)
+
+    raw: list[list[dict | None]] = []
+    for zi in range(n_z):
+        row: list[dict | None] = []
+        for fam in ordered:
+            bucket = cells.get((fam, zi), [])
+            if bucket:
+                avg_score = sum(b["display_score"] for b in bucket) / len(bucket)
+                row.append({
+                    "x": round(axis_x(fam, ordered), 4),
+                    "z": _depth(zi, n_z),
+                    "y": round(max(0.0, min(10.0, avg_score)), 2),
+                    "genre": fam,
+                    "band": _exposure_label(zi, n_z),
+                    "avg_score": round(avg_score, 1),
+                    "certainty": round(min(len(bucket) / 5.0, 1.0), 2),
+                    "count": len(bucket),
+                })
+            else:
+                row.append(None)
+        raw.append(row)
+
+    surface: list[list[dict]] = []
+    for zi, row in enumerate(raw):
+        filled: list[dict] = []
+        for gi, fam in enumerate(ordered):
+            cell = row[gi]
+            if cell:
+                filled.append(cell)
+                continue
+            neighbors = []
+            for dz, dx in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+                nz, ng = zi + dz, gi + dx
+                if 0 <= nz < len(raw) and 0 <= ng < len(ordered) and raw[nz][ng]:
+                    neighbors.append(raw[nz][ng])
+            if neighbors:
+                avg_score = sum(n["avg_score"] for n in neighbors) / len(neighbors)
+                filled.append({
+                    "x": round(axis_x(fam, ordered), 4),
+                    "z": _depth(zi, n_z),
+                    "y": round(max(0.0, min(10.0, avg_score)), 2),
+                    "genre": fam,
+                    "band": "interpolated",
+                    "avg_score": round(avg_score, 1),
+                    "certainty": 0.15,
+                    "count": 0,
+                })
+            else:
+                filled.append({
+                    "x": round(axis_x(fam, ordered), 4),
+                    "z": _depth(zi, n_z),
+                    "y": 5.0,
+                    "genre": fam,
+                    "band": "none",
+                    "avg_score": 5.0,
+                    "certainty": 0.05,
+                    "count": 0,
+                })
+        surface.append(filled)
 
     timeline_dates = sorted({r["created_at"][:10] for r in ratings})
 
     return {
-        "points": points,
-        "clusters": cluster_traits,
+        "points": [],
+        "genre_labels": ordered,
+        "axes": {
+            "x": {"label": "Genre", "low": ordered[0], "high": ordered[-1]},
+            "y": {"label": "Rating", "low": "0", "high": "10"},
+            "z": {"label": "Library depth", "low": "Early", "high": "Core catalog"},
+        },
+        "surface": surface,
         "timeline_dates": timeline_dates,
-        "n_clusters": k,
     }

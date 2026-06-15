@@ -33,6 +33,11 @@ async def recent_tracks(user: dict = Depends(get_current_user)):
     return await spotify_svc.fetch_recently_played(user["id"])
 
 
+@router.get("/now-playing")
+async def now_playing(user: dict = Depends(get_current_user)):
+    return await spotify_svc.fetch_now_playing(user["id"])
+
+
 @router.get("/rated-ids")
 async def rated_spotify_ids(user: dict = Depends(get_current_user)):
     sb = get_supabase()

@@ -40,24 +40,28 @@ export function AlbumArt({
   alt,
   size = 'md',
   className,
+  round,
 }: {
   src?: string | null;
   alt: string;
   size?: 'sm' | 'md' | 'lg' | 'xl';
   className?: string;
+  round?: boolean;
 }) {
   const sizes = { sm: 'w-10 h-10', md: 'w-14 h-14', lg: 'w-32 h-32', xl: 'w-48 h-48' };
+  const radius = round ? 'rounded-full' : 'rounded-xl';
   return src ? (
     <img
       src={src}
       alt={alt}
-      className={clsx(sizes[size], 'rounded-xl object-cover shadow-lg ring-1 ring-white/10', className)}
+      className={clsx(sizes[size], radius, 'object-cover shadow-lg ring-1 ring-white/10', className)}
     />
   ) : (
     <div
       className={clsx(
         sizes[size],
-        'rounded-xl bg-white/5 flex items-center justify-center text-muted text-xs ring-1 ring-white/10',
+        radius,
+        'bg-white/5 flex items-center justify-center text-muted text-xs ring-1 ring-white/10',
         className,
       )}
     >
@@ -70,13 +74,19 @@ export function GlassCard({
   children,
   className,
   hover,
+  onClick,
 }: {
   children: React.ReactNode;
   className?: string;
   hover?: boolean;
+  onClick?: () => void;
 }) {
   return (
     <div
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onClick={onClick}
+      onKeyDown={onClick ? (e) => { if (e.key === 'Enter' || e.key === ' ') onClick(); } : undefined}
       className={clsx(
         'glass rounded-2xl p-5 transition-all duration-200',
         hover && 'hover:bg-white/[0.06] hover:border-white/15 hover:-translate-y-0.5 cursor-pointer',

@@ -49,15 +49,30 @@ export function Rate() {
     predicted_score?: number;
     confidence_low?: number;
     confidence_high?: number;
+    neighbors?: string[];
+    similar_count?: number;
+  } | null>(null);
+  const [paradox, setParadox] = useState<{
+    message: string;
+    chain: { song_id: string; title: string; artist: string }[];
+    winnerId: string;
+    loserId: string;
   } | null>(null);
 
   useEffect(() => {
     if (song) {
       setStep('bucket');
       setError(null);
-      api<typeof prediction>(`/ml/predict-rating`, {
+      api<typeof prediction>('/ml/predict-rating', {
         method: 'POST',
-        body: JSON.stringify({ spotify_id: song.spotify_id }),
+        body: JSON.stringify({
+          spotify_id: song.spotify_id,
+          title: song.title,
+          artist: song.artist,
+          album: song.album,
+          duration_ms: song.duration_ms,
+          artists: song.artists,
+        }),
       })
         .then(setPrediction)
         .catch(() => setPrediction(null));
@@ -89,12 +104,15 @@ export function Rate() {
     }
   };
 
-  const pickWinner = async (winnerId: string, loserId: string) => {
+  const submitCompare = async (winnerId: string, loserId: string, confirmParadox = false) => {
     if (loading) return;
     setLoading(true);
     setError(null);
     try {
       const res = await api<{
+        paradox?: boolean;
+        message?: string;
+        chain?: { song_id: string; title: string; artist: string }[];
         opponent: Opponent | null;
         comparisons_remaining: number;
       }>('/ratings/compare', {
@@ -103,8 +121,19 @@ export function Rate() {
           winner_song_id: winnerId,
           loser_song_id: loserId,
           rated_song_id: ratedSongId,
+          confirm_paradox: confirmParadox,
         }),
       });
+      if (res.paradox) {
+        setParadox({
+          message: res.message || 'This contradicts your earlier ratings.',
+          chain: res.chain || [],
+          winnerId,
+          loserId,
+        });
+        return;
+      }
+      setParadox(null);
       setOpponent(res.opponent);
       setRemaining(res.comparisons_remaining);
       if (!res.opponent || res.comparisons_remaining === 0) setStep('done');
@@ -115,6 +144,8 @@ export function Rate() {
     }
   };
 
+  const pickWinner = (winnerId: string, loserId: string) => submitCompare(winnerId, loserId);
+
   const reset = () => {
     setSong(null);
     setBucket(null);
@@ -122,6 +153,7 @@ export function Rate() {
     setOpponent(null);
     setStep('search');
     setPrediction(null);
+    setParadox(null);
     setError(null);
   };
 
@@ -165,6 +197,11 @@ export function Rate() {
               {prediction?.available && (
                 <p className="mt-4 text-sm text-accent">
                   Predicted {prediction.predicted_score} ({prediction.confidence_low}–{prediction.confidence_high})
+                  {prediction.neighbors && prediction.neighbors.length > 0 && (
+                    <span className="block text-muted text-xs mt-1">
+                      Based on {prediction.similar_count} similar songs — e.g. {prediction.neighbors[0]}
+                    </span>
+                  )}
                 </p>
               )}
             </div>
@@ -241,6 +278,38 @@ export function Rate() {
             ))}
           </div>
           {loading && <div className="flex justify-center"><Spinner /></div>}
+        </div>
+      )}
+
+      {paradox && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+          <GlassCard className="max-w-md w-full !p-6 space-y-4 animate-fade-up">
+            <h3 className="font-display text-xl font-semibold">Taste paradox</h3>
+            <p className="text-sm text-muted">{paradox.message}</p>
+            {paradox.chain.length > 0 && (
+              <p className="text-xs text-muted font-mono">
+                {paradox.chain.map((c) => c.title).join(' → ')}
+              </p>
+            )}
+            <p className="text-sm">Your pick will override the conflicting comparison and recalculate scores.</p>
+            <div className="flex gap-3 justify-end">
+              <button
+                type="button"
+                onClick={() => setParadox(null)}
+                className="px-4 py-2 text-sm text-muted hover:text-text cursor-pointer"
+              >
+                Go back
+              </button>
+              <button
+                type="button"
+                disabled={loading}
+                onClick={() => submitCompare(paradox.winnerId, paradox.loserId, true)}
+                className="px-5 py-2 text-sm bg-accent text-bg rounded-full font-medium cursor-pointer disabled:opacity-50"
+              >
+                Yes, keep my pick
+              </button>
+            </div>
+          </GlassCard>
         </div>
       )}
 

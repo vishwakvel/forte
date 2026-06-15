@@ -25,16 +25,50 @@ export function Collection() {
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [bucketFilter, setBucketFilter] = useState<string>('');
   const [selected, setSelected] = useState<Rating | null>(null);
+  const [editScore, setEditScore] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const refresh = () => {
     const params = new URLSearchParams({ sort_by: sortBy, sort_dir: sortDir });
     if (bucketFilter) params.set('bucket', bucketFilter);
-    api<Rating[]>(`/collection?${params}`).then(setRatings).catch(() => {});
+    return api<Rating[]>(`/collection?${params}`).then(setRatings).catch(() => {});
+  };
+
+  useEffect(() => {
+    refresh();
   }, [sortBy, sortDir, bucketFilter]);
+
+  useEffect(() => {
+    if (selected) setEditScore(String(selected.display_score));
+  }, [selected]);
 
   const toggleSort = (col: string) => {
     if (sortBy === col) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
     else { setSortBy(col); setSortDir('desc'); }
+  };
+
+  const saveScore = async () => {
+    if (!selected?.songs) return;
+    const score = parseFloat(editScore);
+    if (Number.isNaN(score) || score < 0 || score > 10) {
+      setSaveError('Enter a score between 0 and 10');
+      return;
+    }
+    setSaving(true);
+    setSaveError(null);
+    try {
+      const updated = await api<Rating>(`/ratings/${selected.song_id}/score`, {
+        method: 'PATCH',
+        body: JSON.stringify({ display_score: score }),
+      });
+      setSelected(updated);
+      await refresh();
+    } catch (e) {
+      setSaveError(e instanceof Error ? e.message : 'Failed to update score');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const radarData = selected?.songs?.audio_features
@@ -129,6 +163,29 @@ export function Collection() {
                   <BucketBadge bucket={selected.bucket} />
                 </div>
               </div>
+            </div>
+            <div className="mt-6 space-y-2">
+              <label className="text-xs text-muted uppercase tracking-wider">Update score</label>
+              <div className="flex gap-2">
+                <input
+                  type="number"
+                  min={0}
+                  max={10}
+                  step={0.1}
+                  value={editScore}
+                  onChange={(e) => setEditScore(e.target.value)}
+                  className="flex-1 bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm font-mono focus:outline-none focus:border-accent/50"
+                />
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={saveScore}
+                  className="px-4 py-2 rounded-xl bg-accent text-bg text-sm font-medium cursor-pointer disabled:opacity-50"
+                >
+                  {saving ? 'Saving…' : 'Save'}
+                </button>
+              </div>
+              {saveError && <p className="text-rose-400 text-xs">{saveError}</p>}
             </div>
             {radarData.length > 0 && (
               <div className="mt-6">

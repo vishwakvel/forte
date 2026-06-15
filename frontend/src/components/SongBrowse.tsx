@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
-import { ChevronLeft, Clock, ListMusic, Music } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+import { ChevronLeft, Clock, ListMusic, Music, RefreshCw } from 'lucide-react';
 import clsx from 'clsx';
 import { SongSearch } from './SongSearch';
+import { NowPlaying } from './NowPlaying';
 import { AlbumArt, Spinner } from './ui';
 import { api, type Song } from '../lib/api';
 
@@ -25,6 +26,19 @@ export function SongBrowse({ onSelect }: Props) {
   const [loading, setLoading] = useState(true);
   const [loadingTracks, setLoadingTracks] = useState(false);
   const [trackError, setTrackError] = useState<string | null>(null);
+  const [loadingRecent, setLoadingRecent] = useState(false);
+
+  const loadRecent = useCallback(async () => {
+    setLoadingRecent(true);
+    try {
+      const rec = await api<Song[]>('/songs/recent');
+      setRecent(rec);
+    } catch {
+      /* keep stale */
+    } finally {
+      setLoadingRecent(false);
+    }
+  }, []);
 
   useEffect(() => {
     Promise.all([
@@ -40,6 +54,26 @@ export function SongBrowse({ onSelect }: Props) {
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    const onFocus = () => loadRecent();
+    window.addEventListener('focus', onFocus);
+    const interval = setInterval(loadRecent, 60_000);
+    return () => {
+      window.removeEventListener('focus', onFocus);
+      clearInterval(interval);
+    };
+  }, [loadRecent]);
+
+  function timeAgo(iso?: string) {
+    if (!iso) return '';
+    const mins = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+    if (mins < 1) return 'just now';
+    if (mins < 60) return `${mins}m ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs}h ago`;
+    return `${Math.floor(hrs / 24)}d ago`;
+  }
 
   const openPlaylist = async (pl: Playlist) => {
     setActivePlaylist(pl);
@@ -75,40 +109,51 @@ export function SongBrowse({ onSelect }: Props) {
         </p>
         <p className="text-xs text-muted truncate">{song.artist}</p>
       </div>
-      {dimmed ? (
-        <span className="text-[10px] text-muted shrink-0">Rated</span>
-      ) : (
-        <span className="text-[10px] text-accent opacity-0 group-hover:opacity-100 transition shrink-0">→</span>
-      )}
+      <span className="text-[10px] text-muted shrink-0 tabular-nums">
+        {dimmed ? 'Rated' : timeAgo(song.played_at)}
+      </span>
     </button>
   );
 
   return (
     <div className="h-full flex flex-col min-h-0 gap-3">
+      <NowPlaying onSelect={onSelect} ratedIds={ratedIds} />
       <SongSearch onSelect={onSelect} placeholder="Search any track..." />
 
       {loading ? (
         <div className="flex-1 flex items-center justify-center"><Spinner /></div>
       ) : (
         <div className="flex-1 grid grid-cols-2 gap-3 min-h-0">
-          {/* Recently played — left */}
           <div className="glass rounded-2xl flex flex-col min-h-0 overflow-hidden">
             <div className="flex items-center gap-2 px-4 py-3 border-b border-white/8 shrink-0">
               <Clock className="w-4 h-4 text-muted" />
-              <h3 className="text-xs font-medium uppercase tracking-wider text-muted">Recently Played</h3>
+              <h3 className="text-xs font-medium uppercase tracking-wider text-muted flex-1">Recently Played</h3>
+              <button
+                type="button"
+                onClick={loadRecent}
+                disabled={loadingRecent}
+                title="Refresh from Spotify"
+                className="p-1 rounded-lg text-muted hover:text-text hover:bg-white/5 transition cursor-pointer disabled:opacity-40"
+              >
+                <RefreshCw className={clsx('w-3.5 h-3.5', loadingRecent && 'animate-spin')} />
+              </button>
             </div>
+            <p className="px-4 pb-2 text-[10px] text-muted/70 shrink-0">Synced from Spotify · may lag ~30 min</p>
             <div className="flex-1 overflow-y-auto p-2 min-h-0">
               {recent.length === 0 ? (
                 <p className="text-center text-muted text-xs py-8">Nothing recent yet</p>
               ) : (
                 recent.map((s) => (
-                  <TrackRow key={s.spotify_id} song={s} dimmed={ratedIds.has(s.spotify_id)} />
+                  <TrackRow
+                    key={`${s.spotify_id}-${s.played_at ?? 'x'}`}
+                    song={s}
+                    dimmed={ratedIds.has(s.spotify_id)}
+                  />
                 ))
               )}
             </div>
           </div>
 
-          {/* Playlists — right */}
           <div className="glass rounded-2xl flex flex-col min-h-0 overflow-hidden">
             <div className="flex items-center gap-2 px-4 py-3 border-b border-white/8 shrink-0">
               {activePlaylist ? (
@@ -130,7 +175,6 @@ export function SongBrowse({ onSelect }: Props) {
                 <span className="text-xs text-text truncate ml-auto">{activePlaylist.name}</span>
               )}
             </div>
-
             <div className="flex-1 overflow-y-auto p-2 min-h-0">
               {activePlaylist ? (
                 loadingTracks ? (

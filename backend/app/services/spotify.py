@@ -15,6 +15,7 @@ SCOPES = " ".join([
     "user-read-private",
     "user-top-read",
     "user-read-recently-played",
+    "user-read-currently-playing",
     "playlist-read-private",
     "playlist-read-collaborative",
 ])
@@ -92,6 +93,8 @@ async def spotify_get(user_id: str, path: str, params: dict | None = None) -> di
             params=params,
             headers={"Authorization": f"Bearer {token}"},
         )
+        if res.status_code == 204:
+            return {}
         res.raise_for_status()
         return res.json()
 
@@ -115,6 +118,7 @@ def track_from_item(t: dict | None) -> dict | None:
         ),
         "duration_ms": t.get("duration_ms"),
         "spotify_popularity": t.get("popularity"),
+        "album_type": (t.get("album") or {}).get("album_type"),
     }
 
 
@@ -124,6 +128,56 @@ async def spotify_search(user_id: str, q: str, limit: int = 10) -> list[dict]:
     )
     tracks = data.get("tracks", {}).get("items", [])
     return [s for t in tracks if (s := track_from_item(t))]
+
+
+async def fetch_artist_genres_by_name(user_id: str, name: str) -> list[str]:
+    try:
+        data = await spotify_get(
+            user_id, "/search", {"q": name, "type": "artist", "limit": 1}
+        )
+    except httpx.HTTPStatusError:
+        return []
+    items = data.get("artists", {}).get("items", [])
+    if not items:
+        return []
+    return [g.lower() for g in (items[0].get("genres") or [])]
+
+
+async def fetch_track_genres(user_id: str, spotify_id: str, artist_names: list[str] | None = None) -> list[str]:
+    """Genres from track artists (Spotify has no per-track genre field)."""
+    genres: list[str] = []
+    try:
+        track = await spotify_get(user_id, f"/tracks/{spotify_id}")
+    except httpx.HTTPStatusError:
+        track = {}
+    artist_ids = [a["id"] for a in track.get("artists", []) if a.get("id")]
+    if artist_ids:
+        for i in range(0, len(artist_ids), 50):
+            batch = ",".join(artist_ids[i : i + 50])
+            try:
+                data = await spotify_get(user_id, "/artists", {"ids": batch})
+            except httpx.HTTPStatusError:
+                continue
+            for artist in data.get("artists") or []:
+                genres.extend(artist.get("genres") or [])
+
+    if not genres and artist_names:
+        for name in artist_names[:3]:
+            genres.extend(await fetch_artist_genres_by_name(user_id, name))
+
+    if not genres and artist_names:
+        from app.services.genre_infer import fetch_musicbrainz_genres
+        mb = await fetch_musicbrainz_genres(artist_names[0])
+        genres.extend(mb)
+
+    seen: set[str] = set()
+    out: list[str] = []
+    for g in genres:
+        gl = g.lower()
+        if gl not in seen:
+            seen.add(gl)
+            out.append(gl)
+    return out
 
 
 async def fetch_audio_features(user_id: str, spotify_id: str) -> dict | None:
@@ -218,15 +272,29 @@ async def fetch_playlist_tracks(user_id: str, playlist_id: str, limit: int = 200
     return tracks[:limit]
 
 
-async def fetch_recently_played(user_id: str, limit: int = 30) -> list[dict]:
+async def fetch_recently_played(user_id: str, limit: int = 50) -> list[dict]:
     data = await spotify_get(
-        user_id, "/me/player/recently-played", {"limit": limit}
+        user_id, "/me/player/recently-played", {"limit": min(limit, 50)}
     )
-    seen: set[str] = set()
     tracks: list[dict] = []
     for item in data.get("items", []):
         song = track_from_item(item.get("track"))
-        if song and song["spotify_id"] not in seen:
-            seen.add(song["spotify_id"])
+        if song:
             tracks.append({**song, "played_at": item.get("played_at")})
     return tracks
+
+
+async def fetch_now_playing(user_id: str) -> dict | None:
+    from datetime import datetime, timezone
+    data = await spotify_get(user_id, "/me/player/currently-playing")
+    item = data.get("item")
+    if not item:
+        return None
+    song = track_from_item(item)
+    if not song:
+        return None
+    return {
+        **song,
+        "played_at": datetime.now(timezone.utc).isoformat(),
+        "is_playing": True,
+    }

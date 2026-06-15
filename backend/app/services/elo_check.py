@@ -1,12 +1,15 @@
 """ponytail: assert-based self-check for ELO math."""
+import math
+
 from app.services.elo import (
     bucket_midpoint,
+    comparison_entropy,
     elo_to_display,
-    expected_score,
     pick_opponent,
     should_stop_early,
     update_elo,
 )
+from app.services.consistency import check_paradox, consistency_score
 
 assert bucket_midpoint("fire") == 835
 assert elo_to_display(500) == 5.0
@@ -18,12 +21,20 @@ ratings = [
     {"bucket": "fire", "song_id": "b", "elo": 850},
     {"bucket": "fire", "song_id": "c", "elo": 950},
 ]
-# first pick: closest to 835 → b
+# entropy pick: closest elo to 835 → b
 first = pick_opponent(ratings, "fire", {"new"}, rated_elo=835)
 assert first["song_id"] == "b"
-# won vs 850 → pick harder → c
-after_win = pick_opponent(ratings, "fire", {"new", "b"}, rated_elo=870, last_won=True, last_opponent_elo=850)
-assert after_win["song_id"] == "c"
-# lost vs 700 (worst) → stop
+assert comparison_entropy(835, 850) > comparison_entropy(835, 950)
+
 assert should_stop_early(ratings + [{"song_id": "new", "elo": 650}], "new", False, 700)
+
+comps = [
+    {"id": "1", "winner_song_id": "a", "loser_song_id": "b", "created_at": "2025-01-01"},
+    {"id": "2", "winner_song_id": "b", "loser_song_id": "c", "created_at": "2025-01-02"},
+    {"id": "3", "winner_song_id": "c", "loser_song_id": "a", "created_at": "2025-01-03"},
+]
+assert consistency_score(comps)["score"] < 1.0
+paradox = check_paradox(comps[:2], "c", "a")
+assert paradox and paradox["type"] == "cycle"
+
 print("elo self-check ok")

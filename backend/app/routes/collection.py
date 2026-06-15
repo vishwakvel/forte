@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, Query
 
 from app.deps import get_current_user
 from app.services.artists import song_artists, song_has_artist
+from app.services.genres import map_families_for_song
 from app.services.supabase import get_supabase, row
 
 router = APIRouter(prefix="/collection", tags=["collection"])
@@ -13,6 +14,7 @@ async def get_collection(
     bucket: str | None = None,
     artist: str | None = None,
     album: str | None = None,
+    genre: str | None = None,
     sort_by: str = "elo",
     sort_dir: str = "desc",
 ):
@@ -33,6 +35,9 @@ async def get_collection(
         rows = [r for r in rows if song_has_artist(r.get("songs") or {}, artist)]
     if album:
         rows = [r for r in rows if r.get("songs", {}).get("album", "").lower() == album.lower()]
+    if genre:
+        g = genre.lower().strip()
+        rows = [r for r in rows if g in map_families_for_song(r.get("songs") or {})]
 
     return rows
 

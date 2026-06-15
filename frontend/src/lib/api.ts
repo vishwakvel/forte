@@ -53,6 +53,8 @@ export interface Song {
   album_art?: string;
   duration_ms?: number;
   spotify_popularity?: number;
+  played_at?: string;
+  is_playing?: boolean;
 }
 
 export interface Rating {
