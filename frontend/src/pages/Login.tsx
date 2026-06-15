@@ -1,176 +1,223 @@
-import {
-  BarChart3,
-  GitCompareArrows,
-  Layers,
-  Radio,
-  Sparkles,
-  TrendingUp,
-} from 'lucide-react';
+import { useRef, useState } from 'react';
+import { LandingHowCarousel, type HowCard } from '../components/LandingHowCarousel';
+import { LandingVinylHero, useVinylScrollGate } from '../components/LandingVinylHero';
+import { segment, useScrollProgress } from '../hooks/useScrollProgress';
 
-const FEATURES = [
+const PHRASES = [
+  'song against song.',
+  'scores that stick.',
+  'taste you can see.',
+];
+
+const ABOUT =
+  'Forte ranks your Spotify library the way you actually listen. Bucket tracks as Fire, Solid, or Skip, pit them against each other, and build real scores, genre maps, and taste insights from your own picks.';
+
+const HOW_CARDS: HowCard[] = [
   {
-    icon: GitCompareArrows,
-    title: 'Head-to-head ratings',
-    desc: 'Place a song in Fire, Solid, or Skip — then duel it against your library. ELO sorts the truth.',
+    image: '/images/forte-card-connect.png',
+    label: 'Step one',
+    title: 'Connect Spotify',
+    body: 'One tap to link your account. We read your library and top artists. Nothing gets posted.',
+    tags: ['OAuth', 'Read-only', 'Private'],
   },
   {
-    icon: TrendingUp,
-    title: 'A score that means something',
-    desc: 'Every comparison shifts your rankings. Not vibes — a real 0–10 score built from your picks.',
+    image: '/images/forte-card-rate-v2.png',
+    label: 'Step two',
+    title: 'Rate and duel',
+    body: 'Place every track in a bucket, then pick winners head to head. Your ELO score settles from those choices.',
+    tags: ['Fire · Solid · Skip', 'Smart pairing', 'Adaptive scoring'],
   },
   {
-    icon: BarChart3,
-    title: 'Taste over time',
-    desc: '3D taste map, similarity-based predictions, and graph-theory consistency checks on your ratings.',
-  },
-  {
-    icon: Layers,
-    title: 'Your music, your way in',
-    desc: 'Rate from what\'s playing now, recent history, playlists, or search — no typing required.',
+    image: '/images/forte-card-insights-v2.png',
+    label: 'Step three',
+    title: 'See your taste',
+    body: 'Rankings, 3D taste maps, and genre graphs built from how you rank music, not what you stream most.',
+    tags: ['Taste map', 'Rankings', 'Predictions'],
   },
 ];
 
-const STEPS = [
-  { n: '01', label: 'Connect Spotify', detail: 'One tap. We pull your catalog — never posts for you.' },
-  { n: '02', label: 'Rate tracks', detail: 'Bucket + quick comparisons. Smart pairing, stops when it\'s obvious.' },
-  { n: '03', label: 'See your taste', detail: 'Top songs, favorite artists, and ML insights as your library grows.' },
-];
+function phraseMotion(progress: number, index: number) {
+  const start = 0.11 + index * 0.075;
+  const enterEnd = start + 0.024;
+  const exitStart = start + 0.048;
+  const exitEnd = start + 0.072;
+
+  if (progress < start) return { opacity: 0, y: 120, rotateX: 78, scale: 0.92 };
+  if (progress < enterEnd) {
+    const t = (progress - start) / (enterEnd - start);
+    const ease = 1 - (1 - t) ** 3;
+    return {
+      opacity: ease,
+      y: 120 * (1 - ease),
+      rotateX: 78 * (1 - ease),
+      scale: 0.92 + ease * 0.08,
+    };
+  }
+  if (progress < exitStart) return { opacity: 1, y: 0, rotateX: 0, scale: 1 };
+  if (progress < exitEnd) {
+    const t = (progress - exitStart) / (exitEnd - exitStart);
+    return {
+      opacity: 1 - t,
+      y: -80 * t,
+      rotateX: -35 * t,
+      scale: 1 - t * 0.04,
+    };
+  }
+  return { opacity: 0, y: -80, rotateX: -35, scale: 0.96 };
+}
+
+function DustWord({
+  word,
+  progress,
+  index,
+  total,
+}: {
+  word: string;
+  progress: number;
+  index: number;
+  total: number;
+}) {
+  const stagger = total + 1.5;
+  const local = Math.min(1, Math.max(0, (progress * stagger - index) / 1.8));
+  const blur = (1 - local) * 8;
+  const y = (1 - local) * 14;
+
+  return (
+    <span className="landing-dust-word inline-block mr-[0.28em] last:mr-0">
+      <span
+        style={{
+          opacity: local,
+          filter: blur > 0.3 ? `blur(${blur}px)` : undefined,
+          transform: `translateY(${y}px) scale(${0.94 + local * 0.06})`,
+          display: 'inline-block',
+        }}
+      >
+        {word}
+      </span>
+    </span>
+  );
+}
 
 export function Login() {
+  const trackRef = useRef<HTMLDivElement>(null);
+  const progress = useScrollProgress(trackRef);
+  const [cardIndex, setCardIndex] = useState(0);
+  const [vinylOpen, setVinylOpen] = useState(false);
+
+  useVinylScrollGate(vinylOpen);
+
+  const toggleVinyl = () => {
+    setVinylOpen((open) => {
+      if (open) window.scrollTo(0, 0);
+      return !open;
+    });
+  };
+
+  const curtain = segment(progress, 0.05, 0.13);
+  const heroOpacity = vinylOpen ? 1 - segment(progress, 0.04, 0.12) : 1;
+
+  const aboutWordProgress = segment(progress, 0.36, 0.53);
+  const aboutOpacity = segment(progress, 0.34, 0.38) * (1 - segment(progress, 0.53, 0.57));
+  const words = ABOUT.split(/\s+/);
+
   return (
-    <div className="mesh-bg min-h-screen text-text overflow-x-hidden">
-      {/* Ambient orbs */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-[10%] left-[15%] w-[28rem] h-[28rem] rounded-full bg-primary/20 blur-[100px] animate-float-slow" />
-        <div className="absolute bottom-[20%] right-[10%] w-[24rem] h-[24rem] rounded-full bg-accent/15 blur-[90px] animate-float-slower" />
-        <div className="absolute top-[50%] left-[55%] w-64 h-64 rounded-full bg-rose-500/10 blur-[80px] animate-float-slow" style={{ animationDelay: '-5s' }} />
+    <div className="landing-root bg-[#eceae4] text-[#0a0a0a] min-h-[100dvh]">
+      <nav className="landing-nav-shell fixed top-0 inset-x-0 z-[60] flex items-center justify-between px-6 md:px-12 py-5 md:py-6">
+        <span className="landing-display text-sm md:text-base font-semibold tracking-[0.22em] uppercase">
+          Forte
+        </span>
+        <ConnectSpotifyButton />
+      </nav>
+
+      <div ref={trackRef} className="relative" style={{ height: '650vh' }}>
+        <div className="sticky top-0 h-[100dvh] w-full overflow-hidden landing-light-bg">
+          <LandingVinylHero open={vinylOpen} onToggle={toggleVinyl} opacity={heroOpacity} />
+
+          <div
+            className="absolute inset-y-0 left-0 w-1/2 bg-[#eceae4] z-[25] pointer-events-none will-change-transform"
+            style={{
+              transform: `translateX(${(1 - curtain) * -100}%)`,
+              opacity: vinylOpen ? 1 : 0,
+            }}
+          />
+          <div
+            className="absolute inset-y-0 right-0 w-1/2 bg-[#eceae4] z-[25] pointer-events-none will-change-transform"
+            style={{
+              transform: `translateX(${(1 - curtain) * 100}%)`,
+              opacity: vinylOpen ? 1 : 0,
+            }}
+          />
+
+          <div
+            className="absolute inset-0 flex items-center justify-center pointer-events-none z-[35]"
+            style={{ perspective: '900px', opacity: vinylOpen ? 1 : 0 }}
+          >
+            {PHRASES.map((phrase, i) => {
+              const m = phraseMotion(progress, i);
+              if (m.opacity <= 0.01) return null;
+              return (
+                <p
+                  key={phrase}
+                  className="landing-phrase absolute text-center px-6 max-w-4xl"
+                  style={{
+                    opacity: m.opacity,
+                    transform: `rotateX(${m.rotateX}deg) translateY(${m.y}px) scale(${m.scale})`,
+                    transformOrigin: 'center bottom',
+                  }}
+                >
+                  {phrase}
+                </p>
+              );
+            })}
+          </div>
+
+          <div
+            id="story"
+            className="absolute inset-x-0 top-1/2 -translate-y-1/2 px-6 md:px-16 max-w-3xl mx-auto z-[35] pointer-events-none"
+            style={{ opacity: vinylOpen ? aboutOpacity : 0 }}
+          >
+            <p className="landing-display text-2xl md:text-[2.2rem] leading-snug md:leading-tight text-[#0a0a0a] font-normal tracking-tight">
+              {words.map((word, i) => (
+                <DustWord key={i} word={word} progress={aboutWordProgress} index={i} total={words.length} />
+              ))}
+            </p>
+          </div>
+
+          {vinylOpen && (
+            <LandingHowCarousel
+              progress={progress}
+              cards={HOW_CARDS}
+              activeIndex={cardIndex}
+              onPrev={() => setCardIndex((i) => Math.max(0, i - 1))}
+              onNext={() => setCardIndex((i) => Math.min(HOW_CARDS.length - 1, i + 1))}
+            />
+          )}
+        </div>
       </div>
 
-      {/* Hero */}
-      <section className="relative min-h-[92vh] flex flex-col items-center justify-center px-6 pt-16 pb-24">
-        <div className="max-w-3xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass border border-white/10 text-xs text-muted mb-8 animate-fade-up">
-            <Radio className="w-3.5 h-3.5 text-accent" />
-            Music taste engine
-          </div>
-
-          <h1 className="font-display text-6xl md:text-8xl font-semibold tracking-tight animate-fade-up stagger-1">
-            <span className="text-gradient">Forte</span>
-          </h1>
-
-          <p className="mt-6 text-xl md:text-2xl text-muted font-light leading-relaxed max-w-xl mx-auto animate-fade-up stagger-2">
-            Rank every song. Build a taste profile that&apos;s actually{' '}
-            <em className="text-text not-italic font-normal">yours</em>.
-          </p>
-
-          <p className="mt-4 text-sm text-muted/80 max-w-md mx-auto animate-fade-up stagger-3">
-            Beli-style comparisons meet Spotify. ELO rankings, artist leaderboards, and ML-powered taste insights — desktop-first, zero fluff.
-          </p>
-
-          <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-up stagger-4">
-            <a
-              href="/api/auth/login"
-              className="group inline-flex items-center gap-3 px-8 py-4 bg-accent text-bg font-semibold rounded-full hover:scale-[1.03] transition-all duration-300 glow-green cursor-pointer"
-            >
-              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-                <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z" />
-              </svg>
-              Connect with Spotify
-            </a>
-            <a href="#how" className="text-sm text-muted hover:text-text transition cursor-pointer">
-              See how it works ↓
-            </a>
-          </div>
-        </div>
-
-        {/* Decorative score preview */}
-        <div className="mt-16 w-full max-w-lg mx-auto animate-fade-up stagger-5">
-          <div className="glass rounded-2xl p-5 border border-white/10 relative overflow-hidden">
-            <div className="absolute inset-0 landing-shimmer opacity-50 pointer-events-none" />
-            <div className="relative flex items-center gap-4">
-              <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-accent/30 to-primary/30 flex items-center justify-center shrink-0">
-                <Sparkles className="w-7 h-7 text-accent" />
-              </div>
-              <div className="flex-1 min-w-0 text-left">
-                <p className="text-sm font-medium truncate">Blinding Lights</p>
-                <p className="text-xs text-muted">The Weeknd</p>
-              </div>
-              <div className="text-right">
-                <p className="font-display text-2xl font-semibold text-accent">8.4</p>
-                <p className="text-[10px] text-muted uppercase tracking-wider">Fire</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Features bento */}
-      <section className="relative px-6 py-24 border-t border-white/5">
-        <div className="max-w-5xl mx-auto">
-          <h2 className="font-display text-3xl md:text-4xl font-semibold text-center mb-4">
-            More than a playlist
-          </h2>
-          <p className="text-muted text-center max-w-lg mx-auto mb-14">
-            Forte turns subjective taste into a ranked library you can explore, compare, and understand.
-          </p>
-          <div className="grid md:grid-cols-2 gap-4">
-            {FEATURES.map(({ icon: Icon, title, desc }, i) => (
-              <div
-                key={title}
-                className="glass rounded-2xl p-6 hover:bg-white/[0.05] hover:border-white/15 border border-transparent transition-all duration-300 group"
-                style={{ animationDelay: `${i * 0.08}s` }}
-              >
-                <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center mb-4 group-hover:bg-accent/20 transition">
-                  <Icon className="w-5 h-5 text-accent" />
-                </div>
-                <h3 className="font-medium text-lg mb-2">{title}</h3>
-                <p className="text-sm text-muted leading-relaxed">{desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* How it works */}
-      <section id="how" className="relative px-6 py-24 border-t border-white/5">
-        <div className="max-w-3xl mx-auto">
-          <h2 className="font-display text-3xl font-semibold text-center mb-14">How it works</h2>
-          <div className="space-y-8">
-            {STEPS.map(({ n, label, detail }) => (
-              <div key={n} className="flex gap-6 items-start">
-                <span className="font-display text-3xl text-accent/40 font-semibold tabular-nums shrink-0 w-12">
-                  {n}
-                </span>
-                <div>
-                  <h3 className="font-medium text-lg">{label}</h3>
-                  <p className="text-muted text-sm mt-1 leading-relaxed">{detail}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Footer CTA */}
-      <section className="relative px-6 py-20 border-t border-white/5">
-        <div className="max-w-xl mx-auto text-center">
-          <h2 className="font-display text-2xl md:text-3xl font-semibold mb-4">
-            Ready to rank your library?
-          </h2>
-          <p className="text-muted text-sm mb-8">
-            Free to use. Your data stays yours. Built for people who care how music actually stacks up.
-          </p>
-          <a
-            href="/api/auth/login"
-            className="inline-flex items-center gap-3 px-8 py-4 bg-accent text-bg font-semibold rounded-full hover:scale-[1.03] transition-all duration-300 glow-green cursor-pointer"
-          >
-            Get started with Spotify
-          </a>
-        </div>
-        <p className="text-center text-[10px] text-muted/50 mt-16">
-          Forte · Not affiliated with Spotify
-        </p>
-      </section>
+      <footer className="relative z-10 py-10 text-center text-[10px] tracking-[0.2em] uppercase text-[#8a8a85] bg-[#eceae4] border-t border-black/[0.06]">
+        Forte · Not affiliated with Spotify
+      </footer>
     </div>
+  );
+}
+
+function ConnectSpotifyButton() {
+  return (
+    <a
+      href="/api/auth/login"
+      className="landing-display inline-flex items-center gap-2.5 text-[10px] md:text-xs px-5 md:px-6 py-2.5 md:py-3 rounded-full font-semibold tracking-[0.12em] uppercase bg-[#0a0a0a] text-[#eceae4] hover:scale-[1.02] transition cursor-pointer whitespace-nowrap"
+    >
+      <SpotifyIcon />
+      Connect with Spotify
+    </a>
+  );
+}
+
+function SpotifyIcon() {
+  return (
+    <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02z" />
+    </svg>
   );
 }

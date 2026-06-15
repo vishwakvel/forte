@@ -41,7 +41,7 @@ export function SongSearch({ onSelect, placeholder, autoFocus, large }: Props) {
   return (
     <div className="relative w-full">
       <div className={clsx('relative group', large && 'max-w-2xl mx-auto')}>
-        <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-accent/20 via-primary/20 to-accent/20 blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-500" />
+        <div className="absolute inset-0 rounded-2xl bg-accent/10 blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-500" />
         <div className="relative flex items-center">
           <Search className="absolute left-5 w-5 h-5 text-muted pointer-events-none" />
           <input
@@ -51,18 +51,18 @@ export function SongSearch({ onSelect, placeholder, autoFocus, large }: Props) {
             placeholder={placeholder ?? 'Search millions of tracks...'}
             autoFocus={autoFocus}
             className={clsx(
-              'w-full pl-14 pr-5 bg-white/5 border border-white/10 rounded-2xl text-text placeholder:text-muted',
-              'focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent/30 transition-all duration-200',
+              'w-full pl-14 pr-5 bg-white border border-black/[0.08] rounded-2xl text-text placeholder:text-muted shadow-sm',
+              'focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 transition-all duration-200',
               large ? 'py-5 text-lg' : 'py-3.5 text-sm',
             )}
           />
           {loading && (
-            <div className="absolute right-5 w-4 h-4 border-2 border-white/20 border-t-accent rounded-full animate-spin" />
+            <div className="absolute right-5 w-4 h-4 border-2 border-black/10 border-t-accent rounded-full animate-spin" />
           )}
         </div>
       </div>
       {open && results.length > 0 && (
-        <ul className="absolute z-50 w-full mt-2 glass-strong rounded-2xl shadow-2xl overflow-hidden border border-white/10 max-h-80 overflow-y-auto">
+        <ul className="absolute z-50 w-full mt-2 glass rounded-2xl shadow-xl overflow-hidden border border-black/[0.08] max-h-80 overflow-y-auto">
           {results.map((s) => (
             <li key={s.spotify_id}>
               <button
@@ -73,12 +73,12 @@ export function SongSearch({ onSelect, placeholder, autoFocus, large }: Props) {
                   setResults([]);
                   setOpen(false);
                 }}
-                className="w-full flex items-center gap-4 px-5 py-3.5 hover:bg-white/5 transition cursor-pointer text-left group"
+                className="w-full flex items-center gap-4 px-5 py-3.5 hover:bg-black/[0.04] transition cursor-pointer text-left group"
               >
                 {s.album_art ? (
-                  <img src={s.album_art} alt="" className="w-12 h-12 rounded-lg object-cover ring-1 ring-white/10 group-hover:ring-accent/30 transition" />
+                  <img src={s.album_art} alt="" className="w-12 h-12 rounded-lg object-cover ring-1 ring-black/[0.08] group-hover:ring-accent/30 transition" />
                 ) : (
-                  <div className="w-12 h-12 rounded-lg bg-white/5 flex items-center justify-center">
+                  <div className="w-12 h-12 rounded-lg bg-black/[0.04] flex items-center justify-center">
                     <Music className="w-5 h-5 text-muted" />
                   </div>
                 )}

@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { ArrowRight, Disc3, Music2, Star, TrendingUp } from 'lucide-react';
+import clsx from 'clsx';
 import { SongSearch } from '../components/SongSearch';
 import { AlbumArt, BucketBadge, GlassCard, ScoreBadge } from '../components/ui';
 import { api, type Rating } from '../lib/api';
@@ -27,12 +28,12 @@ export function Dashboard() {
   return (
     <div className="space-y-10">
       {/* Hero */}
-      <section className="relative overflow-hidden rounded-3xl glass p-8 md:p-12 animate-fade-up">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-accent/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-64 h-64 bg-primary/20 rounded-full blur-3xl translate-y-1/2 -translate-x-1/3 pointer-events-none" />
+      <section className="relative overflow-hidden rounded-2xl glass p-8 md:p-12 animate-fade-up border border-black/[0.06]">
+        <div className="absolute top-0 right-0 w-80 h-80 bg-accent/8 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-56 h-56 bg-primary/8 rounded-full blur-3xl translate-y-1/2 -translate-x-1/3 pointer-events-none" />
         <div className="relative">
-          <p className="text-accent text-sm font-medium tracking-widest uppercase mb-3">Your taste, ranked</p>
-          <h1 className="font-display text-4xl md:text-5xl font-semibold leading-tight max-w-xl">
+          <p className="text-[11px] tracking-[0.22em] uppercase text-accent font-semibold mb-3">Your taste, ranked</p>
+          <h1 className="font-display text-4xl md:text-5xl font-semibold leading-tight max-w-xl tracking-tight">
             What are you <span className="text-gradient">listening</span> to?
           </h1>
           <p className="text-muted mt-4 max-w-md">Search any track on Spotify and rank it with ELO-style comparisons.</p>
@@ -80,9 +81,10 @@ export function Dashboard() {
           <div className="space-y-2">
             {top.map((r, i) => {
               const song = r.songs!;
+              const isTop = i === 0;
               return (
-                <GlassCard key={r.id} hover className="!p-3 flex items-center gap-4">
-                  <span className="font-display text-lg text-muted w-6 text-center">{i + 1}</span>
+                <GlassCard key={r.id} hover className={clsx('!p-3 flex items-center gap-4', isTop && 'ring-1 ring-accent/25 glow-green')}>
+                  <span className={clsx('font-display text-lg w-6 text-center', isTop ? 'text-accent' : 'text-muted')}>{i + 1}</span>
                   <AlbumArt src={song.album_art} alt={song.title} size="sm" />
                   <div className="flex-1 min-w-0">
                     <p className="font-medium truncate text-sm">{song.title}</p>

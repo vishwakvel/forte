@@ -11,7 +11,7 @@ import { AuthCallback } from './pages/AuthCallback';
 
 function Protected({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
-  if (loading) return <p className="p-8 text-forte-muted">Loading...</p>;
+  if (loading) return <div className="min-h-screen mesh-bg flex items-center justify-center"><div className="w-8 h-8 border-2 border-black/10 border-t-accent rounded-full animate-spin" /></div>;
   if (!user) return <Navigate to="/login" replace />;
   return <Layout>{children}</Layout>;
 }

@@ -48,7 +48,7 @@ export function NowPlaying({ onSelect, ratedIds }: Props) {
   const rated = ratedIds.has(track.spotify_id);
 
   return (
-    <div className="shrink-0 relative overflow-hidden rounded-2xl border border-accent/25 bg-gradient-to-r from-accent/10 via-white/[0.03] to-primary/10">
+    <div className="shrink-0 relative overflow-hidden rounded-2xl border border-accent/20 bg-gradient-to-r from-accent/8 via-white to-primary/5 shadow-sm">
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_left,rgba(34,197,94,0.12),transparent_60%)] pointer-events-none" />
       <div className="relative flex items-center gap-4 p-4">
         <div className="relative shrink-0">
@@ -56,7 +56,7 @@ export function NowPlaying({ onSelect, ratedIds }: Props) {
           <span className="absolute -bottom-1 -right-1 flex h-4 w-4">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-60" />
             <span className="relative inline-flex rounded-full h-4 w-4 bg-accent items-center justify-center">
-              <Radio className="w-2.5 h-2.5 text-bg" />
+              <Radio className="w-2.5 h-2.5 text-white" />
             </span>
           </span>
         </div>
@@ -72,8 +72,8 @@ export function NowPlaying({ onSelect, ratedIds }: Props) {
           className={clsx(
             'shrink-0 px-5 py-2.5 rounded-full text-sm font-semibold transition-all duration-200 cursor-pointer',
             rated
-              ? 'bg-white/5 text-muted cursor-not-allowed'
-              : 'bg-accent text-bg hover:scale-105 hover:bg-accent/90 glow-green',
+              ? 'bg-black/[0.04] text-muted cursor-not-allowed'
+              : 'bg-accent text-white hover:scale-105 hover:bg-accent/90 glow-green',
           )}
         >
           {rated ? 'Rated' : 'Rate this'}

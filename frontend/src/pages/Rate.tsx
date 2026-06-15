@@ -24,9 +24,9 @@ const BUCKETS: {
   color: string;
   glow: string;
 }[] = [
-  { id: 'fire', label: 'Fire', desc: 'Instant favorite', range: '6.7–10.0', Icon: Flame, color: 'from-rose-500/20 to-orange-500/10 border-rose-500/30 hover:border-rose-400/60', glow: 'hover:shadow-[0_0_30px_rgba(244,63,94,0.2)]' },
-  { id: 'solid', label: 'Solid', desc: 'Good, not elite', range: '3.4–6.6', Icon: ThumbsUp, color: 'from-indigo-500/20 to-violet-500/10 border-indigo-500/30 hover:border-indigo-400/60', glow: 'hover:shadow-[0_0_30px_rgba(99,102,241,0.2)]' },
-  { id: 'skip', label: 'Skip', desc: 'Not for me', range: '0.0–3.3', Icon: Ban, color: 'from-slate-500/20 to-slate-600/10 border-slate-500/30 hover:border-slate-400/60', glow: 'hover:shadow-[0_0_30px_rgba(100,116,139,0.15)]' },
+  { id: 'fire', label: 'Fire', desc: 'Instant favorite', range: '6.7–10.0', Icon: Flame, color: 'bg-white border-rose-200 hover:border-rose-400 text-rose-700', glow: 'hover:shadow-[0_12px_40px_rgba(225,29,72,0.12)]' },
+  { id: 'solid', label: 'Solid', desc: 'Good, not elite', range: '3.4–6.6', Icon: ThumbsUp, color: 'bg-white border-indigo-200 hover:border-indigo-400 text-indigo-700', glow: 'hover:shadow-[0_12px_40px_rgba(79,70,229,0.12)]' },
+  { id: 'skip', label: 'Skip', desc: 'Not for me', range: '0.0–3.3', Icon: Ban, color: 'bg-white border-slate-200 hover:border-slate-400 text-slate-600', glow: 'hover:shadow-[0_12px_40px_rgba(100,116,139,0.1)]' },
 ];
 
 interface Opponent {
@@ -161,9 +161,10 @@ export function Rate() {
     <div className="h-full flex flex-col min-h-0">
       {step === 'search' && (
         <>
-          <div className="shrink-0 mb-3">
-            <h1 className="font-display text-2xl font-semibold">Rate a Song</h1>
-            <p className="text-muted text-sm">Pick from recent, playlists, or search.</p>
+          <div className="shrink-0 mb-4 animate-fade-up">
+            <p className="text-[11px] tracking-[0.22em] uppercase text-accent font-semibold mb-2">Forte</p>
+            <h1 className="font-display text-2xl md:text-3xl font-semibold tracking-tight">Rate a song</h1>
+            <p className="text-muted text-sm mt-1">Pick from recent, playlists, or search.</p>
           </div>
           {error && <div className="shrink-0 mb-3"><ErrorBanner message={error} onDismiss={() => setError(null)} /></div>}
           <div className="flex-1 min-h-0">
@@ -217,7 +218,7 @@ export function Rate() {
                 disabled={loading}
                 onClick={() => placeBucket(b.id)}
                 className={clsx(
-                  'relative p-6 rounded-2xl border bg-gradient-to-br transition-all duration-300 cursor-pointer',
+                  'relative p-6 rounded-2xl border transition-all duration-300 cursor-pointer shadow-sm',
                   'disabled:opacity-50 disabled:cursor-not-allowed',
                   'hover:-translate-y-1 active:scale-[0.98]',
                   b.color,
@@ -267,7 +268,7 @@ export function Rate() {
                 onClick={() =>
                   pickWinner(id, id === ratedSongId ? opponent.rating.song_id : ratedSongId)
                 }
-                className="group glass rounded-2xl p-8 text-center border border-white/10 hover:border-accent/40 hover:bg-accent/5 hover:-translate-y-1 transition-all duration-300 cursor-pointer disabled:opacity-50"
+                className="group glass rounded-2xl p-8 text-center border border-black/[0.08] hover:border-accent/40 hover:bg-accent/5 hover:-translate-y-1 transition-all duration-300 cursor-pointer disabled:opacity-50"
               >
                 <span className="text-xs uppercase tracking-widest text-muted mb-4 block">{tag}</span>
                 <AlbumArt src={s.album_art} alt={s.title} size="lg" className="mx-auto group-hover:scale-105 transition-transform duration-300" />
@@ -282,7 +283,7 @@ export function Rate() {
       )}
 
       {paradox && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <GlassCard className="max-w-md w-full !p-6 space-y-4 animate-fade-up">
             <h3 className="font-display text-xl font-semibold">Taste paradox</h3>
             <p className="text-sm text-muted">{paradox.message}</p>
@@ -304,7 +305,7 @@ export function Rate() {
                 type="button"
                 disabled={loading}
                 onClick={() => submitCompare(paradox.winnerId, paradox.loserId, true)}
-                className="px-5 py-2 text-sm bg-accent text-bg rounded-full font-medium cursor-pointer disabled:opacity-50"
+                className="px-5 py-2 text-sm bg-accent text-white rounded-full font-medium cursor-pointer disabled:opacity-50"
               >
                 Yes, keep my pick
               </button>
@@ -329,7 +330,7 @@ export function Rate() {
           <button
             type="button"
             onClick={reset}
-            className="px-8 py-3 bg-accent text-bg font-semibold rounded-full hover:bg-accent/90 hover:scale-105 transition-all duration-200 cursor-pointer glow-green"
+            className="px-8 py-3 bg-accent text-white font-semibold rounded-full hover:bg-accent/90 hover:scale-105 transition-all duration-200 cursor-pointer glow-green"
           >
             Rate another
           </button>

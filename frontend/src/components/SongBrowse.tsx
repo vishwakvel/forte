@@ -99,7 +99,7 @@ export function SongBrowse({ onSelect }: Props) {
       disabled={dimmed}
       className={clsx(
         'w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-left transition cursor-pointer shrink-0',
-        dimmed ? 'opacity-40 cursor-not-allowed' : 'hover:bg-white/5 group',
+        dimmed ? 'opacity-40 cursor-not-allowed' : 'hover:bg-black/[0.04] group',
       )}
     >
       <AlbumArt src={song.album_art} alt={song.title} size="sm" />
@@ -125,7 +125,7 @@ export function SongBrowse({ onSelect }: Props) {
       ) : (
         <div className="flex-1 grid grid-cols-2 gap-3 min-h-0">
           <div className="glass rounded-2xl flex flex-col min-h-0 overflow-hidden">
-            <div className="flex items-center gap-2 px-4 py-3 border-b border-white/8 shrink-0">
+            <div className="flex items-center gap-2 px-4 py-3 border-b border-black/[0.06] shrink-0">
               <Clock className="w-4 h-4 text-muted" />
               <h3 className="text-xs font-medium uppercase tracking-wider text-muted flex-1">Recently Played</h3>
               <button
@@ -133,7 +133,7 @@ export function SongBrowse({ onSelect }: Props) {
                 onClick={loadRecent}
                 disabled={loadingRecent}
                 title="Refresh from Spotify"
-                className="p-1 rounded-lg text-muted hover:text-text hover:bg-white/5 transition cursor-pointer disabled:opacity-40"
+                className="p-1 rounded-lg text-muted hover:text-text hover:bg-black/[0.04] transition cursor-pointer disabled:opacity-40"
               >
                 <RefreshCw className={clsx('w-3.5 h-3.5', loadingRecent && 'animate-spin')} />
               </button>
@@ -155,7 +155,7 @@ export function SongBrowse({ onSelect }: Props) {
           </div>
 
           <div className="glass rounded-2xl flex flex-col min-h-0 overflow-hidden">
-            <div className="flex items-center gap-2 px-4 py-3 border-b border-white/8 shrink-0">
+            <div className="flex items-center gap-2 px-4 py-3 border-b border-black/[0.06] shrink-0">
               {activePlaylist ? (
                 <button
                   type="button"
@@ -195,16 +195,16 @@ export function SongBrowse({ onSelect }: Props) {
                       key={pl.id}
                       type="button"
                       onClick={() => openPlaylist(pl)}
-                      className="rounded-xl p-2 text-left hover:bg-white/5 transition cursor-pointer group"
+                      className="rounded-xl p-2 text-left hover:bg-black/[0.04] transition cursor-pointer group"
                     >
                       {pl.image ? (
                         <img
                           src={pl.image}
                           alt=""
-                          className="w-full aspect-square rounded-lg object-cover mb-1.5 ring-1 ring-white/10 group-hover:ring-accent/30 transition"
+                          className="w-full aspect-square rounded-lg object-cover mb-1.5 ring-1 ring-black/[0.08] group-hover:ring-accent/30 transition"
                         />
                       ) : (
-                        <div className="w-full aspect-square rounded-lg bg-white/5 flex items-center justify-center mb-1.5">
+                        <div className="w-full aspect-square rounded-lg bg-black/[0.04] flex items-center justify-center mb-1.5">
                           <Music className="w-6 h-6 text-muted" />
                         </div>
                       )}

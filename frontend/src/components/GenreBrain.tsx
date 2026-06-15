@@ -124,8 +124,8 @@ export function GenreBrain({
 
       // draw
       const bg = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(w, h) * 0.55);
-      bg.addColorStop(0, '#0f0f18');
-      bg.addColorStop(1, '#050508');
+      bg.addColorStop(0, '#f5f4f0');
+      bg.addColorStop(1, '#e8e6e0');
       ctx.fillStyle = bg;
       ctx.fillRect(0, 0, w, h);
 
@@ -165,7 +165,7 @@ export function GenreBrain({
       ctx.globalCompositeOperation = 'source-over';
 
       // labels on larger nodes
-      ctx.fillStyle = 'rgba(255,255,255,0.75)';
+      ctx.fillStyle = 'rgba(10,10,10,0.75)';
       ctx.font = '10px system-ui, sans-serif';
       ctx.textAlign = 'center';
       for (const b of bodies) {
@@ -200,7 +200,7 @@ export function GenreBrain({
   };
 
   return (
-    <div className="relative rounded-2xl overflow-hidden border border-white/10 bg-black/60 h-full min-h-[420px]">
+    <div className="relative rounded-2xl overflow-hidden border border-black/[0.08] bg-[#f0efe9] h-full min-h-[420px] shadow-sm">
       <canvas
         ref={canvasRef}
         className="w-full h-full min-h-[420px]"
@@ -208,7 +208,7 @@ export function GenreBrain({
         onMouseLeave={() => setHover(null)}
       />
       {hover && (
-        <div className="absolute top-3 right-3 glass rounded-xl px-3 py-2 text-xs max-w-[220px] pointer-events-none border border-white/10">
+        <div className="absolute top-3 right-3 glass rounded-xl px-3 py-2 text-xs max-w-[220px] pointer-events-none border border-black/[0.08]">
           <p className="font-medium capitalize">{hover.label}</p>
           <p className="text-muted mt-1">{hover.size} songs · {hover.avg_score}</p>
         </div>

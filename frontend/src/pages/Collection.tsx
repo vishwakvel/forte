@@ -91,8 +91,8 @@ export function Collection() {
             className={clsx(
               'px-4 py-2 rounded-full text-sm font-medium border transition cursor-pointer capitalize',
               bucketFilter === b
-                ? 'bg-accent/15 text-accent border-accent/30'
-                : 'text-muted border-white/10 hover:border-white/20 hover:text-text',
+                ? 'bg-text text-white border-text shadow-sm'
+                : 'text-muted border-black/[0.08] hover:border-black/[0.12] hover:text-text hover:bg-black/[0.03]',
             )}
           >
             {b || 'All'}
@@ -104,7 +104,7 @@ export function Collection() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-white/8 text-muted text-xs uppercase tracking-wider">
+              <tr className="border-b border-black/[0.06] text-muted text-xs uppercase tracking-wider">
                 <th className="p-4 text-left w-14" />
                 {[
                   ['title', 'Title'],
@@ -128,7 +128,7 @@ export function Collection() {
                 return (
                   <tr
                     key={r.id}
-                    className="border-b border-white/5 hover:bg-white/[0.03] cursor-pointer transition"
+                    className="border-b border-black/[0.05] hover:bg-black/[0.03] cursor-pointer transition"
                     onClick={() => setSelected(r)}
                   >
                     <td className="p-4"><AlbumArt src={song.album_art} alt={song.title} size="sm" /></td>
@@ -151,8 +151,8 @@ export function Collection() {
       </GlassCard>
 
       {selected && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setSelected(null)}>
-          <div className="glass rounded-2xl p-8 max-w-lg w-full animate-fade-up border border-white/10" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setSelected(null)}>
+          <div className="glass rounded-2xl p-8 max-w-lg w-full animate-fade-up border border-black/[0.08]" onClick={(e) => e.stopPropagation()}>
             <div className="flex gap-5">
               <AlbumArt src={selected.songs?.album_art} alt={selected.songs?.title ?? ''} size="lg" />
               <div>
@@ -174,26 +174,26 @@ export function Collection() {
                   step={0.1}
                   value={editScore}
                   onChange={(e) => setEditScore(e.target.value)}
-                  className="flex-1 bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm font-mono focus:outline-none focus:border-accent/50"
+                  className="flex-1 bg-white border border-black/[0.08] rounded-xl px-3 py-2 text-sm font-mono focus:outline-none focus:border-accent/50"
                 />
                 <button
                   type="button"
                   disabled={saving}
                   onClick={saveScore}
-                  className="px-4 py-2 rounded-xl bg-accent text-bg text-sm font-medium cursor-pointer disabled:opacity-50"
+                  className="px-4 py-2 rounded-xl bg-accent text-white text-sm font-medium cursor-pointer disabled:opacity-50"
                 >
                   {saving ? 'Saving…' : 'Save'}
                 </button>
               </div>
-              {saveError && <p className="text-rose-400 text-xs">{saveError}</p>}
+              {saveError && <p className="text-rose-700 text-xs">{saveError}</p>}
             </div>
             {radarData.length > 0 && (
               <div className="mt-6">
                 <ResponsiveContainer width="100%" height={200}>
                   <RadarChart data={radarData}>
-                    <PolarGrid stroke="rgba(255,255,255,0.08)" />
-                    <PolarAngleAxis dataKey="feature" tick={{ fill: '#94a3b8', fontSize: 11 }} />
-                    <Radar dataKey="value" stroke="#22c55e" fill="#22c55e" fillOpacity={0.25} />
+                    <PolarGrid stroke="rgba(0,0,0,0.08)" />
+                    <PolarAngleAxis dataKey="feature" tick={{ fill: '#6b6b66', fontSize: 11 }} />
+                    <Radar dataKey="value" stroke="#16a34a" fill="#16a34a" fillOpacity={0.2} />
                   </RadarChart>
                 </ResponsiveContainer>
               </div>
@@ -201,7 +201,7 @@ export function Collection() {
             <button
               type="button"
               onClick={() => setSelected(null)}
-              className="w-full mt-4 py-2.5 rounded-xl border border-white/10 hover:bg-white/5 transition cursor-pointer text-sm"
+              className="w-full mt-4 py-2.5 rounded-xl border border-black/[0.08] hover:bg-black/[0.04] transition cursor-pointer text-sm"
             >
               Close
             </button>

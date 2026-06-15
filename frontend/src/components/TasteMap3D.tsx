@@ -98,17 +98,17 @@ export function TasteMap3D({
     const w = rect.width;
     const h = rect.height;
 
-    ctx.fillStyle = '#08080e';
+    ctx.fillStyle = '#f0efe9';
     ctx.fillRect(0, 0, w, h);
 
     for (let i = -1; i <= 1; i += 0.5) {
-      drawLine3D(ctx, { x: i, y: 0, z: -1 }, { x: i, y: 0, z: 1 }, rotY, zoom, w, h, 'rgba(255,255,255,0.04)', 1);
-      drawLine3D(ctx, { x: -1, y: 0, z: i }, { x: 1, y: 0, z: i }, rotY, zoom, w, h, 'rgba(255,255,255,0.04)', 1);
+      drawLine3D(ctx, { x: i, y: 0, z: -1 }, { x: i, y: 0, z: 1 }, rotY, zoom, w, h, 'rgba(0,0,0,0.06)', 1);
+      drawLine3D(ctx, { x: -1, y: 0, z: i }, { x: 1, y: 0, z: i }, rotY, zoom, w, h, 'rgba(0,0,0,0.06)', 1);
     }
 
-    drawLine3D(ctx, { x: 0, y: 0, z: 0 }, { x: 0, y: 10, z: 0 }, rotY, zoom, w, h, 'rgba(74,222,128,0.35)', 1.5);
-    drawLine3D(ctx, { x: 0, y: 0, z: -1.05 }, { x: 0, y: 0, z: 1.05 }, rotY, zoom, w, h, 'rgba(34,211,238,0.35)', 1.5);
-    drawLine3D(ctx, { x: -1, y: 0, z: 0 }, { x: 1, y: 0, z: 0 }, rotY, zoom, w, h, 'rgba(248,113,113,0.35)', 1.5);
+    drawLine3D(ctx, { x: 0, y: 0, z: 0 }, { x: 0, y: 10, z: 0 }, rotY, zoom, w, h, 'rgba(22,163,74,0.45)', 1.5);
+    drawLine3D(ctx, { x: 0, y: 0, z: -1.05 }, { x: 0, y: 0, z: 1.05 }, rotY, zoom, w, h, 'rgba(14,116,144,0.4)', 1.5);
+    drawLine3D(ctx, { x: -1, y: 0, z: 0 }, { x: 1, y: 0, z: 0 }, rotY, zoom, w, h, 'rgba(225,29,72,0.35)', 1.5);
 
     const tris: { pts: Proj[]; cell: SurfaceCell; corners: [SurfaceCell, SurfaceCell, SurfaceCell] }[] = [];
     for (let i = 0; i < surface.length - 1; i++) {
@@ -152,7 +152,7 @@ export function TasteMap3D({
       ctx.closePath();
       ctx.fillStyle = topoColor(tri.cell.y, tri.cell.certainty);
       ctx.fill();
-      ctx.strokeStyle = `rgba(255,255,255,${0.04 + (tri.cell.y / 10) * 0.06})`;
+      ctx.strokeStyle = `rgba(0,0,0,${0.05 + (tri.cell.y / 10) * 0.04})`;
       ctx.stroke();
     }
 
@@ -166,7 +166,7 @@ export function TasteMap3D({
     for (const { genre, x } of labels) {
       const p = project({ x, y: 0, z: 0 }, rotY, zoom, w, h);
       if (p.depth < -0.8) continue;
-      ctx.fillStyle = 'rgba(248,113,113,0.9)';
+      ctx.fillStyle = 'rgba(190,24,24,0.85)';
       ctx.font = '8px system-ui,sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText(genre, p.px, p.py + 11);
@@ -176,7 +176,7 @@ export function TasteMap3D({
     for (let tick = 0; tick <= 10; tick++) {
       const p = project({ x: 0, y: tick, z: 0 }, rotY, zoom, w, h);
       if (p.depth < -0.8) continue;
-      ctx.fillStyle = 'rgba(74,222,128,0.9)';
+      ctx.fillStyle = 'rgba(22,163,74,0.9)';
       ctx.font = '9px ui-monospace,monospace';
       ctx.textAlign = 'right';
       ctx.fillText(String(tick), p.px - 7, p.py + 3);
@@ -219,7 +219,7 @@ export function TasteMap3D({
   };
 
   return (
-    <div className="relative rounded-2xl overflow-hidden border border-white/10 bg-[#08080e] h-full min-h-[440px]">
+    <div className="relative rounded-2xl overflow-hidden border border-black/[0.08] bg-[#f0efe9] h-full min-h-[440px] shadow-sm">
       <canvas
         ref={canvasRef}
         className="w-full h-full min-h-[440px] cursor-grab active:cursor-grabbing touch-none"
@@ -232,15 +232,15 @@ export function TasteMap3D({
         onPointerLeave={() => { drag.current.active = false; }}
       />
       <div className="absolute top-3 right-3 flex flex-col gap-1">
-        <button type="button" aria-label="Zoom in" onClick={() => setZoom((z) => Math.min(2, z + 0.12))} className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center cursor-pointer hover:bg-white/10">
+        <button type="button" aria-label="Zoom in" onClick={() => setZoom((z) => Math.min(2, z + 0.12))} className="w-8 h-8 rounded-lg bg-white/90 border border-black/[0.08] flex items-center justify-center cursor-pointer hover:bg-white shadow-sm">
           <Plus className="w-4 h-4" />
         </button>
-        <button type="button" aria-label="Zoom out" onClick={() => setZoom((z) => Math.max(0.7, z - 0.12))} className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center cursor-pointer hover:bg-white/10">
+        <button type="button" aria-label="Zoom out" onClick={() => setZoom((z) => Math.max(0.7, z - 0.12))} className="w-8 h-8 rounded-lg bg-white/90 border border-black/[0.08] flex items-center justify-center cursor-pointer hover:bg-white shadow-sm">
           <Minus className="w-4 h-4" />
         </button>
       </div>
       {hover && (
-        <div className="absolute top-3 left-3 glass rounded-xl px-3 py-2 text-xs pointer-events-none border border-white/10">
+        <div className="absolute top-3 left-3 glass rounded-xl px-3 py-2 text-xs pointer-events-none border border-black/[0.08]">
           <p className="font-medium capitalize">{hover.genre}</p>
           <p className="text-accent mt-0.5">{hover.avg_score} · {hover.count} song{hover.count !== 1 ? 's' : ''}</p>
           <p className="text-muted/70 mt-0.5 capitalize">{hover.band}</p>
