@@ -23,18 +23,6 @@ async def get_user_by_id(user_id: str) -> dict | None:
     return row(res)
 
 
-async def get_user_by_spotify_id(spotify_id: str) -> dict | None:
-    sb = get_supabase()
-    res = (
-        sb.table("users")
-        .select("*")
-        .eq("spotify_id", spotify_id)
-        .maybe_single()
-        .execute()
-    )
-    return row(res)
-
-
 async def upsert_user(user: dict) -> dict:
     sb = get_supabase()
     res = (

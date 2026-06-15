@@ -128,13 +128,7 @@ def compute_embedding(
     timeline_dates = sorted({r["created_at"][:10] for r in ratings})
 
     return {
-        "points": [],
         "genre_labels": ordered,
-        "axes": {
-            "x": {"label": "Genre", "low": ordered[0], "high": ordered[-1]},
-            "y": {"label": "Rating", "low": "0", "high": "10"},
-            "z": {"label": "Library depth", "low": "Early", "high": "Core catalog"},
-        },
         "surface": surface,
         "timeline_dates": timeline_dates,
     }

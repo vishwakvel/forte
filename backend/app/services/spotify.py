@@ -193,24 +193,6 @@ async def fetch_audio_features(user_id: str, spotify_id: str) -> dict | None:
     return {k: data.get(k) for k in keys}
 
 
-async def fetch_top_tracks(user_id: str, time_range: str) -> list[dict]:
-    data = await spotify_get(
-        user_id, "/me/top/tracks", {"time_range": time_range, "limit": 50}
-    )
-    return [
-        {
-            "spotify_id": t["id"],
-            "title": t["name"],
-            "artist": ", ".join(a["name"] for a in t["artists"]),
-            "album": t["album"]["name"],
-            "album_art": (t["album"]["images"][0]["url"] if t["album"]["images"] else None),
-            "time_range": time_range,
-            "rank": i + 1,
-        }
-        for i, t in enumerate(data.get("items", []))
-    ]
-
-
 async def fetch_top_artists(user_id: str, time_range: str) -> list[dict]:
     data = await spotify_get(
         user_id, "/me/top/artists", {"time_range": time_range, "limit": 50}
@@ -228,10 +210,6 @@ async def fetch_top_artists(user_id: str, time_range: str) -> list[dict]:
     ]
 
 
-async def fetch_profile(user_id: str) -> dict:
-    return await spotify_get(user_id, "/me")
-
-
 async def fetch_playlists(user_id: str, limit: int = 50) -> list[dict]:
     data = await spotify_get(user_id, "/me/playlists", {"limit": limit})
     return [
@@ -240,7 +218,6 @@ async def fetch_playlists(user_id: str, limit: int = 50) -> list[dict]:
             "name": p["name"],
             "image": p["images"][0]["url"] if p.get("images") else None,
             "track_count": p.get("tracks", {}).get("total", 0),
-            "owner": p.get("owner", {}).get("display_name"),
         }
         for p in data.get("items", [])
     ]
@@ -296,5 +273,4 @@ async def fetch_now_playing(user_id: str) -> dict | None:
     return {
         **song,
         "played_at": datetime.now(timezone.utc).isoformat(),
-        "is_playing": True,
     }

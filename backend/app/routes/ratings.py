@@ -38,11 +38,6 @@ class UpdateScoreRequest(BaseModel):
     display_score: float
 
 
-def _rating_with_song(row: dict) -> dict:
-    song = row.pop("songs", None) or {}
-    return {**row, **{f"song_{k}": v for k, v in song.items() if k != "id"}, "song": song}
-
-
 def _user_comparisons(sb, user_id: str) -> list[dict]:
     res = (
         sb.table("comparisons")
@@ -358,40 +353,6 @@ def _update_volatility(sb, user_id: str, song_ids: list[str]):
         sb.table("ratings").update({"elo_volatility": vol}).eq("user_id", user_id).eq("song_id", sid).execute()
 
 
-@router.get("/consistency")
-async def get_consistency(user: dict = Depends(get_current_user)):
-    sb = get_supabase()
-    comps = _user_comparisons(sb, user["id"])
-    return consistency_svc.consistency_score(comps)
-
-
-@router.get("/next-opponent/{song_id}")
-async def next_opponent(song_id: str, user: dict = Depends(get_current_user)):
-    sb = get_supabase()
-    rating = (
-        sb.table("ratings")
-        .select("*")
-        .eq("user_id", user["id"])
-        .eq("song_id", song_id)
-        .maybe_single()
-        .execute()
-    )
-    r = row(rating)
-    if not r:
-        raise HTTPException(404, "Rating not found")
-    remaining = max(0, MAX_COMPARISONS - r["comparison_count"])
-    rated_elo = r["elo"]
-    rated_song_row = (
-        sb.table("songs").select("*").eq("id", song_id).maybe_single().execute()
-    )
-    rated_song = row(rated_song_row) or {}
-    opponent = (
-        _find_opponent(sb, user["id"], r["bucket"], song_id, rated_elo, rated_song)
-        if remaining else None
-    )
-    return {"opponent": opponent, "comparisons_remaining": remaining}
-
-
 @router.patch("/{song_id}/score")
 async def update_score(
     song_id: str,
@@ -439,42 +400,3 @@ async def update_score(
         .execute()
     )
     return row(updated)
-
-
-@router.post("/backfill-genres")
-async def backfill_genres(user: dict = Depends(get_current_user)):
-    """Fetch Spotify artist genres for rated songs missing them."""
-    sb = get_supabase()
-    user_id = user["id"]
-    res = (
-        sb.table("ratings")
-        .select("songs(id, spotify_id, genres)")
-        .eq("user_id", user_id)
-        .execute()
-    )
-    updated = 0
-    for r in res.data or []:
-        song = r.get("songs") or {}
-        if song.get("genres"):
-            continue
-        spotify_id = song.get("spotify_id")
-        if not spotify_id:
-            continue
-        raw = await spotify_svc.fetch_track_genres(
-            user_id,
-            spotify_id,
-            song.get("artists") or ([song.get("artist")] if song.get("artist") else None),
-        )
-        if not raw and song.get("artist"):
-            from app.services.genre_infer import fetch_musicbrainz_genres
-            raw = await fetch_musicbrainz_genres(song["artist"], song.get("title"))
-        if not raw:
-            continue
-        sb.table("songs").update({
-            "genres": raw,
-            "primary_genre": genre_svc.pick_primary_genre(raw),
-        }).eq("id", song["id"]).execute()
-        updated += 1
-        if updated >= 25:
-            break
-    return {"updated": updated}

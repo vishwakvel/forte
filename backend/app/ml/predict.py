@@ -82,7 +82,6 @@ def predict_from_similar(
     std = max(30.0, spread ** 0.5)
 
     return {
-        "predicted_elo": pred_elo,
         "predicted_score": round(pred_elo / 100, 1),
         "confidence_low": round(max(0, pred_elo - 1.96 * std) / 100, 1),
         "confidence_high": round(min(1000, pred_elo + 1.96 * std) / 100, 1),

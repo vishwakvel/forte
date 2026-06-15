@@ -9,7 +9,6 @@ interface EmbeddingData {
   message?: string;
   surface?: SurfaceCell[][];
   genre_labels?: string[];
-  axes?: { x: { label: string; low: string; high: string }; y: { label: string; low: string; high: string }; z: { label: string; low: string; high: string } };
   timeline_dates?: string[];
 }
 

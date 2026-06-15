@@ -56,7 +56,3 @@ async def _artist_genres(client: httpx.AsyncClient, artist_id: str) -> list[str]
             seen.add(g)
             out.append(g)
     return out[:8]
-
-
-def families_from_raw(raw: list[str]) -> list[str]:
-    return list(dict.fromkeys(family(g) for g in raw if g))

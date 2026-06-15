@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, Query
 from app.deps import get_current_user
 from app.services.artists import song_artists, song_has_artist
 from app.services.genres import map_families_for_song
-from app.services.supabase import get_supabase, row
+from app.services.supabase import get_supabase
 
 router = APIRouter(prefix="/collection", tags=["collection"])
 
@@ -108,26 +108,3 @@ async def get_recent(user: dict = Depends(get_current_user), limit: int = Query(
         .execute()
     )
     return res.data or []
-
-
-@router.get("/{song_id}/history")
-async def get_history(song_id: str, user: dict = Depends(get_current_user)):
-    sb = get_supabase()
-    comparisons = (
-        sb.table("comparisons")
-        .select("*")
-        .eq("user_id", user["id"])
-        .or_(f"winner_song_id.eq.{song_id},loser_song_id.eq.{song_id}")
-        .order("created_at")
-        .execute()
-    )
-    rating = (
-        sb.table("ratings")
-        .select("*, songs(*)")
-        .eq("user_id", user["id"])
-        .eq("song_id", song_id)
-        .maybe_single()
-        .execute()
-    )
-    r = row(rating)
-    return {"rating": r, "comparisons": comparisons.data or []}

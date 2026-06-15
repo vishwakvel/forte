@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 
-from app.services.genres import family, order_families, primary_family, song_families
+from app.services.genres import family, primary_family, song_families
 
 
 def _genre_similarity(a: str, b: str) -> float:
@@ -63,7 +63,6 @@ def compute_genre_graph(
             "weight": round(weight, 2),
             "avg_score": round(weight / max(genre_songs[genre], 1) * 10, 1),
             "parent": family(genre),
-            "is_artist_fallback": False,
         })
 
     edges = []
@@ -84,6 +83,4 @@ def compute_genre_graph(
     return {
         "nodes": nodes,
         "edges": edges,
-        "parents": order_families({n["parent"] for n in nodes}),
-        "total_genres": len(nodes),
     }

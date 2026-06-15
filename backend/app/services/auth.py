@@ -7,7 +7,6 @@ from app.config import settings
 from app.services import spotify as spotify_svc
 from app.services.supabase import (
     get_supabase,
-    get_user_by_spotify_id,
     upsert_tokens,
     upsert_user,
 )
@@ -69,14 +68,6 @@ async def handle_callback(code: str) -> tuple[dict, str]:
 async def seed_top_data(user_id: str):
     sb = get_supabase()
     for tr in ("short_term", "medium_term", "long_term"):
-        tracks = await spotify_svc.fetch_top_tracks(user_id, tr)
-        for t in tracks:
-            t["user_id"] = user_id
-        if tracks:
-            sb.table("user_top_tracks").upsert(
-                tracks, on_conflict="user_id,spotify_id,time_range"
-            ).execute()
-
         artists = await spotify_svc.fetch_top_artists(user_id, tr)
         for a in artists:
             a["user_id"] = user_id

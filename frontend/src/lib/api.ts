@@ -54,7 +54,6 @@ export interface Song {
   duration_ms?: number;
   spotify_popularity?: number;
   played_at?: string;
-  is_playing?: boolean;
 }
 
 export interface Rating {
@@ -67,7 +66,6 @@ export interface Rating {
   created_at: string;
   updated_at: string;
   songs?: Song & { id: string; audio_features?: Record<string, number> };
-  song?: Song & { id: string; audio_features?: Record<string, number> };
 }
 
 export interface User {

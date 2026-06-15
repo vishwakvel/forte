@@ -8,4 +8,4 @@ Music taste engine with ELO-based song rating and ML-powered taste insights.
 - **Backend:** FastAPI (Python)
 - **Database:** Supabase (Postgres)
 - **Auth:** Spotify OAuth 2.0
-- **ML:** scikit-learn, UMAP, ruptures
+- **ML:** Similarity-based predictions, genre graph, 3D taste map

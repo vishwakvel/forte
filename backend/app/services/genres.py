@@ -81,12 +81,6 @@ def genres_compatible(song_a: dict, song_b: dict) -> bool:
     return bool(fa & fb)
 
 
-def order_families(families: set[str]) -> list[str]:
-    ordered = [f for f in GENRE_SPECTRUM if f in families]
-    extras = sorted(families - set(ordered))
-    return ordered + extras
-
-
 def map_family(fam: str) -> str:
     f = (fam or "other").lower().strip()
     return f if f in MAP_GENRES else "other"

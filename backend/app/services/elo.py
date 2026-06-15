@@ -85,8 +85,6 @@ def pick_opponent(
     bucket: Bucket,
     exclude_song_ids: set[str],
     rated_elo: float,
-    last_won: bool | None = None,
-    last_opponent_elo: float | None = None,
 ) -> dict | None:
     """Pick the opponent that maximizes comparison entropy (most informative)."""
     candidates = [

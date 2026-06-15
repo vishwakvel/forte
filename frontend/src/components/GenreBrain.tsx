@@ -7,7 +7,6 @@ interface GenreNode {
   weight: number;
   avg_score: number;
   parent: string;
-  is_artist_fallback?: boolean;
 }
 
 interface GenreEdge {

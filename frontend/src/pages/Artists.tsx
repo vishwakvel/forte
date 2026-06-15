@@ -12,7 +12,6 @@ interface Aggregate {
   top_score: number;
   album_art?: string;
   image_url?: string;
-  kind?: string;
 }
 
 type Tab = 'artists' | 'albums' | 'singles' | 'genres';

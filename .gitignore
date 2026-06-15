@@ -12,10 +12,16 @@ build/
 # ML artifacts (regenerated per user)
 models/*.joblib
 
-# IDE
+# IDE / local tooling
 .idea/
 .vscode/
 *.swp
+.cursor/
+design-system/
+
+# Root shadcn scratch (not part of app)
+/package.json
+/package-lock.json
 
 # OS
 .DS_Store

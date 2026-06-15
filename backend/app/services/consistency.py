@@ -11,22 +11,6 @@ def build_graph(comparisons: list[dict]) -> dict[str, set[str]]:
     return dict(g)
 
 
-def has_path(graph: dict[str, set[str]], start: str, end: str) -> bool:
-    if start == end:
-        return True
-    seen = {start}
-    stack = [start]
-    while stack:
-        node = stack.pop()
-        for nxt in graph.get(node, ()):
-            if nxt == end:
-                return True
-            if nxt not in seen:
-                seen.add(nxt)
-                stack.append(nxt)
-    return False
-
-
 def shortest_path(graph: dict[str, set[str]], start: str, end: str) -> list[str] | None:
     if start == end:
         return [start]
@@ -107,33 +91,3 @@ def comparisons_to_drop(
         return []
     oldest = min(candidates, key=lambda c: c["created_at"])
     return [oldest["id"]]
-
-
-def consistency_score(comparisons: list[dict]) -> dict:
-    """Fraction of comparisons not participating in any cycle."""
-    if not comparisons:
-        return {"score": 1.0, "paradoxes": [], "total_comparisons": 0}
-    graph = build_graph(comparisons)
-    nodes = set(graph.keys()) | {l for vs in graph.values() for l in vs}
-    paradox_edges: list[dict] = []
-
-    def dfs(node: str, path: list[str], stack_set: set[str]):
-        path.append(node)
-        stack_set.add(node)
-        for nxt in graph.get(node, ()):
-            if nxt in stack_set:
-                idx = path.index(nxt)
-                cycle = path[idx:] + [nxt]
-                paradox_edges.append({"chain": cycle})
-            elif nxt not in path:
-                dfs(nxt, path, stack_set)
-        path.pop()
-        stack_set.discard(node)
-
-    for n in nodes:
-        dfs(n, [], set())
-
-    bad = len(paradox_edges)
-    total = len(comparisons)
-    score = max(0.0, 1.0 - bad / max(total, 1))
-    return {"score": round(score, 3), "paradoxes": paradox_edges, "total_comparisons": total}

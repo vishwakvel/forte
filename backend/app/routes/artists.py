@@ -129,6 +129,4 @@ async def list_singles(user: dict = Depends(get_current_user)):
         .execute()
     )
     items = _aggregate(res.data or [], lambda s: _album_keys(s, singles=True))
-    for item in items:
-        item["kind"] = "single"
     return items

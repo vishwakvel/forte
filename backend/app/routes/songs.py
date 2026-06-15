@@ -1,8 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Query
 
 from app.deps import get_current_user
 from app.services import spotify as spotify_svc
-from app.services.supabase import get_supabase, row
+from app.services.supabase import get_supabase
 
 router = APIRouter(prefix="/songs", tags=["songs"])
 
@@ -53,13 +53,3 @@ async def rated_spotify_ids(user: dict = Depends(get_current_user)):
         if sid:
             ids.append(sid)
     return ids
-
-
-@router.get("/{song_id}")
-async def get_song(song_id: str, user: dict = Depends(get_current_user)):
-    sb = get_supabase()
-    res = sb.table("songs").select("*").eq("id", song_id).maybe_single().execute()
-    data = row(res)
-    if not data:
-        raise HTTPException(404, "Song not found")
-    return data
