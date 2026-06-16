@@ -62,29 +62,41 @@ def predict_from_similar(
         return None
 
     genre_by_artist = _genre_map(top_artists or [])
-    weighted: list[tuple[float, float, str]] = []
+    weighted: list[tuple[float, float]] = []
 
     for r in ratings:
         song = r.get("songs") or {}
         sim = _similarity(target_song, song, genre_by_artist)
         if sim > 0:
-            weighted.append((sim, r["elo"], song.get("title") or ""))
+            weighted.append((sim, r["elo"]))
 
     if not weighted:
         return None
 
-    total = sum(w for w, _, _ in weighted)
-    pred_elo = sum(w * e for w, e, _ in weighted) / total
-    top = sorted(weighted, key=lambda x: -x[0])[:3]
-    neighbors = [t for _, _, t in top]
+    total = sum(w for w, _ in weighted)
+    pred_elo = sum(w * e for w, e in weighted) / total
 
-    spread = sum(w * (e - pred_elo) ** 2 for w, e, _ in weighted) / total
-    std = max(30.0, spread ** 0.5)
+    return {"predicted_score": round(pred_elo / 100, 1)}
 
-    return {
-        "predicted_score": round(pred_elo / 100, 1),
-        "confidence_low": round(max(0, pred_elo - 1.96 * std) / 100, 1),
-        "confidence_high": round(min(1000, pred_elo + 1.96 * std) / 100, 1),
-        "similar_count": len(weighted),
-        "neighbors": neighbors,
-    }
+
+if __name__ == "__main__":
+    demo_ratings = [
+        {
+            "elo": 830,
+            "songs": {"title": "Track A", "artist": "Artist", "album": "Album", "artists": ["Artist"]},
+        },
+        {
+            "elo": 660,
+            "songs": {"title": "Track B", "artist": "Artist", "album": "Other", "artists": ["Artist"]},
+        },
+    ]
+    old_min = settings.min_ratings_for_ml
+    settings.min_ratings_for_ml = 2
+    try:
+        demo = predict_from_similar(
+            {"artist": "Artist", "album": "Album", "artists": ["Artist"]},
+            demo_ratings,
+        )
+        assert demo and demo["predicted_score"] == 7.5
+    finally:
+        settings.min_ratings_for_ml = old_min

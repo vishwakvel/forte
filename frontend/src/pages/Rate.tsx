@@ -47,10 +47,6 @@ export function Rate() {
   const [prediction, setPrediction] = useState<{
     available: boolean;
     predicted_score?: number;
-    confidence_low?: number;
-    confidence_high?: number;
-    neighbors?: string[];
-    similar_count?: number;
   } | null>(null);
   const [paradox, setParadox] = useState<{
     message: string;
@@ -196,13 +192,11 @@ export function Rate() {
               <p className="text-muted mt-1">{song.artist}</p>
               <p className="text-sm text-muted/70 mt-0.5">{song.album}</p>
               {prediction?.available && (
-                <p className="mt-4 text-sm text-accent">
-                  Predicted {prediction.predicted_score} ({prediction.confidence_low}–{prediction.confidence_high})
-                  {prediction.neighbors && prediction.neighbors.length > 0 && (
-                    <span className="block text-muted text-xs mt-1">
-                      Based on {prediction.similar_count} similar songs — e.g. {prediction.neighbors[0]}
-                    </span>
-                  )}
+                <p className="mt-4 text-sm text-text">
+                  Estimated score{' '}
+                  <span className="font-display text-lg font-semibold text-accent tabular-nums">
+                    {prediction.predicted_score}
+                  </span>
                 </p>
               )}
             </div>
